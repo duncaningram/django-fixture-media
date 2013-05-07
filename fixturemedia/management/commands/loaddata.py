@@ -1,5 +1,5 @@
 import os
-from os.path import isdir, join, dirname, relpath
+from os.path import exists, isdir, join, dirname, relpath
 import shutil
 
 from django.conf import settings
@@ -24,7 +24,14 @@ class Command(django.core.management.commands.loaddata.Command):
             target_path = join(settings.MEDIA_ROOT, path.name)
             for fixture_path in self.fixture_media_paths:
                 filepath = join(fixture_path, path.name)
-                os.makedirs(dirname(target_path), exist_ok=True)
+
+                # We would use exist_ok=True, but the folder may be on a
+                # Windows vagrant host, which probably enforces modes we
+                # don't intend, throwing OSErrors for mismatched modes. So
+                # just check if it exists first.
+                if not exists(dirname(target_path)):
+                    os.makedirs(dirname(target_path))
+
                 try:
                     shutil.copy(filepath, target_path)
                 except FileNotFoundError:
