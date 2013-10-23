@@ -1,5 +1,5 @@
 import os
-from os.path import exists, isdir, join, dirname, relpath
+from os.path import dirname, exists, isdir, join, relpath
 import shutil
 
 from django.conf import settings
@@ -9,6 +9,14 @@ import django.core.serializers
 from django.db.models import get_apps, get_models, signals
 from django.db.models.fields.files import FileField
 from django.utils._os import upath
+
+
+def models_with_filefields():
+    for app in get_apps():
+        modelclasses = get_models(app)
+        for modelclass in modelclasses:
+            if any(isinstance(field, FileField) for field in modelclass._meta.fields):
+                yield modelclass
 
 
 class Command(django.core.management.commands.loaddata.Command):
@@ -35,15 +43,13 @@ class Command(django.core.management.commands.loaddata.Command):
                 try:
                     shutil.copy(filepath, target_path)
                 except FileNotFoundError:
+                    self.stderr.write("Expected file at {} doesn't exist, skipping".format(filepath))
                     continue
 
     def handle(self, *fixture_labels, **options):
         # Hook up pre_save events for all the apps' models that have FileFields.
-        for app in get_apps():
-            modelclasses = get_models(app)
-            for modelclass in modelclasses:
-                if any(isinstance(field, FileField) for field in modelclass._meta.fields):
-                    signals.pre_save.connect(self.load_images_for_signal, sender=modelclass)
+        for modelclass in models_with_filefields():
+            signals.pre_save.connect(self.load_images_for_signal, sender=modelclass)
 
         fixture_paths = self.find_fixture_paths()
         fixture_paths = (join(path, 'media') for path in fixture_paths)
