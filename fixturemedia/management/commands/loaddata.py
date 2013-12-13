@@ -42,9 +42,8 @@ class Command(django.core.management.commands.loaddata.Command):
                     self.stderr.write("Expected file at {} doesn't exist, skipping".format(filepath))
                     continue
                 
-                out_file = default_storage.open(target_path, 'w')
-                out_file.write(file_contents)
-                out_file.close()
+                default_storage.save(target_path, file_contents)
+ 
 
 
 
