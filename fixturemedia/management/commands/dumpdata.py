@@ -2,6 +2,7 @@ from optparse import make_option
 import os
 from os.path import abspath, dirname, exists, join
 import shutil
+from cStringIO import StringIO
 
 from django.conf import settings
 from django.core.management.base import CommandError
@@ -9,6 +10,7 @@ import django.core.management.commands.dumpdata
 import django.core.serializers
 from django.db.models.fields.files import FileField
 import django.dispatch
+from django.core.files.storage import default_storage
 
 from fixturemedia.management.commands.loaddata import models_with_filefields
 
@@ -26,25 +28,30 @@ class Command(django.core.management.commands.dumpdata.Command):
     def save_images_for_signal(self, sender, **kwargs):
         instance = kwargs['instance']
         for field in sender._meta.fields:
+            print "ping"
             if not isinstance(field, FileField):
                 continue
             path = getattr(instance, field.attname)
             if path is None or not path.name:
                 continue
 
-            source_path = join(settings.MEDIA_ROOT, path.name)
-            if not exists(source_path):
+            if not default_storage.exists(path.name):
                 continue
+#            source_path = join(settings.MEDIA_ROOT, path.name)
+#            if not exists(source_path):
+#                continue
 
             target_path = join(self.target_dir, path.name)
             if not exists(dirname(target_path)):
                 os.makedirs(dirname(target_path))
-
-            try:
-                shutil.copy(source_path, target_path)
-            except FileNotFoundError:
-                self.stderr.write("Expected file at {} doesn't exist, skipping".format(source_path))
-                continue
+           
+            in_file = default_storage.open(path.name, 'r')
+            file_contents = in_file.read()
+            in_file.close()
+            
+            out_file = open(target_path, 'w')
+            out_file.write(file_contents)
+            out_file.close()
 
     def set_up_serializer(self, ser_format):
         try:
@@ -78,6 +85,5 @@ class Command(django.core.management.commands.dumpdata.Command):
             pre_dump.connect(self.save_images_for_signal, sender=modelclass)
 
         self.set_up_serializer(ser_format)
-
         with open(outfilename, 'w') as self.stdout:
             super(Command, self).handle(*app_labels, **options)
