@@ -1,6 +1,5 @@
 import os
 from os.path import dirname, exists, isdir, join, relpath
-import shutil
 
 from django.conf import settings
 from django.core.files import File
@@ -29,22 +28,25 @@ class Command(django.core.management.commands.loaddata.Command):
             path = getattr(instance, field.attname)
             if path is None or not path.name:
                 continue
-            target_path = join(settings.MEDIA_ROOT, path.name)
             for fixture_path in self.fixture_media_paths:
                 filepath = join(fixture_path, path.name)
-
                 # We would use exist_ok=True, but the folder may be on a
                 # Windows vagrant host, which probably enforces modes we
                 # don't intend, throwing OSErrors for mismatched modes. So
                 # just check if it exists first.
-                if not exists(dirname(target_path)):
-                    os.makedirs(dirname(target_path))
-
                 try:
-                    shutil.copy(filepath, target_path)
+                    in_file = open(filepath, 'r')
+                    file_contents = in_file.read()
+                    in_file.close()
                 except FileNotFoundError:
                     self.stderr.write("Expected file at {} doesn't exist, skipping".format(filepath))
                     continue
+                
+                out_file = default_storage.open(target_path, 'w')
+                out_file.write(file_contents)
+                out_file.close()
+
+
 
     def handle(self, *fixture_labels, **options):
         # Hook up pre_save events for all the apps' models that have FileFields.

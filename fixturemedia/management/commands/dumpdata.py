@@ -1,8 +1,6 @@
 from optparse import make_option
 import os
 from os.path import abspath, dirname, exists, join
-import shutil
-from cStringIO import StringIO
 
 from django.conf import settings
 from django.core.management.base import CommandError
@@ -28,7 +26,6 @@ class Command(django.core.management.commands.dumpdata.Command):
     def save_images_for_signal(self, sender, **kwargs):
         instance = kwargs['instance']
         for field in sender._meta.fields:
-            print "ping"
             if not isinstance(field, FileField):
                 continue
             path = getattr(instance, field.attname)
@@ -37,9 +34,6 @@ class Command(django.core.management.commands.dumpdata.Command):
 
             if not default_storage.exists(path.name):
                 continue
-#            source_path = join(settings.MEDIA_ROOT, path.name)
-#            if not exists(source_path):
-#                continue
 
             target_path = join(self.target_dir, path.name)
             if not exists(dirname(target_path)):
@@ -85,5 +79,6 @@ class Command(django.core.management.commands.dumpdata.Command):
             pre_dump.connect(self.save_images_for_signal, sender=modelclass)
 
         self.set_up_serializer(ser_format)
-        with open(outfilename, 'w') as self.stdout:
+        if True:
+        #with open(outfilename, 'w') as self.stdout:
             super(Command, self).handle(*app_labels, **options)
