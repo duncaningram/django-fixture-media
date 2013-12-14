@@ -16,12 +16,6 @@ from fixturemedia.management.commands.loaddata import models_with_filefields
 pre_dump = django.dispatch.Signal(providing_args=('instance',))
 
 
-class FileOutput(File):
-    def __init__(self, file, name=None):
-        self.ending = None
-        return super(FileOutput, self).__init__(file, name)
-
-
 class Command(django.core.management.commands.dumpdata.Command):
 
     option_list = django.core.management.commands.dumpdata.Command.option_list + (
@@ -86,5 +80,5 @@ class Command(django.core.management.commands.dumpdata.Command):
 
         self.set_up_serializer(ser_format)
 
-        with FileOutput(open(outfilename, 'w')) as self.stdout:
+        with File(open(outfilename, 'w')) as self.stdout:
             super(Command, self).handle(*app_labels, **options)
