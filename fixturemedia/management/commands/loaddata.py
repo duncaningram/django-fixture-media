@@ -29,15 +29,12 @@ class Command(django.core.management.commands.loaddata.Command):
                 continue
             for fixture_path in self.fixture_media_paths:
                 filepath = join(fixture_path, path.name)
-                # We would use exist_ok=True, but the folder may be on a
-                # Windows vagrant host, which probably enforces modes we
-                # don't intend, throwing OSErrors for mismatched modes. So
-                # just check if it exists first.
-                try:
-                    default_storage.save(path.name, open(filepath, 'r'))
-                except FileNotFoundError:
-                    self.stderr.write("Expected file at {} doesn't exist, skipping".format(filepath))
-                    continue
+                with open(filepath, 'rb') as f:
+                    try:
+                        default_storage.save(path.name, f)
+                    except FileNotFoundError:
+                        self.stderr.write("Expected file at {} doesn't exist, skipping".format(filepath))
+                        continue
 
     def handle(self, *fixture_labels, **options):
         # Hook up pre_save events for all the apps' models that have FileFields.
