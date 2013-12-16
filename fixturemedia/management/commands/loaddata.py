@@ -38,11 +38,6 @@ class Command(django.core.management.commands.loaddata.Command):
                 except FileNotFoundError:
                     self.stderr.write("Expected file at {} doesn't exist, skipping".format(filepath))
                     continue
-                
-                
- 
-
-
 
     def handle(self, *fixture_labels, **options):
         # Hook up pre_save events for all the apps' models that have FileFields.
