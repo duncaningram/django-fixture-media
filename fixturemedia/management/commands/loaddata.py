@@ -29,12 +29,12 @@ class Command(django.core.management.commands.loaddata.Command):
                 continue
             for fixture_path in self.fixture_media_paths:
                 filepath = join(fixture_path, path.name)
-                with open(filepath, 'rb') as f:
-                    try:
+                try:
+                    with open(filepath, 'rb') as f:
                         default_storage.save(path.name, f)
-                    except FileNotFoundError:
-                        self.stderr.write("Expected file at {} doesn't exist, skipping".format(filepath))
-                        continue
+                except FileNotFoundError:
+                    self.stderr.write("Expected file at {} doesn't exist, skipping".format(filepath))
+                    continue
 
     def handle(self, *fixture_labels, **options):
         # Hook up pre_save events for all the apps' models that have FileFields.
