@@ -9,6 +9,10 @@ from django.db.models.fields.files import FileField
 from django.utils._os import upath
 
 
+# For Python < 3.3
+file_not_found_error = getattr(__builtins__,'FileNotFoundError', IOError)
+
+
 def models_with_filefields():
     for app in get_apps():
         modelclasses = get_models(app)
@@ -32,7 +36,7 @@ class Command(django.core.management.commands.loaddata.Command):
                 try:
                     with open(filepath, 'rb') as f:
                         default_storage.save(path.name, f)
-                except FileNotFoundError:
+                except file_not_found_error:
                     self.stderr.write("Expected file at {} doesn't exist, skipping".format(filepath))
                     continue
 
